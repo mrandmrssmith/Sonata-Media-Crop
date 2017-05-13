@@ -54,7 +54,7 @@ class MediaCropping
     /**
      * @var string
      *
-     * @ORM\Column(name="size_key", type="string", length=500, nullable=false)
+     * @ORM\Column(name="size_key", type="string", length=255, nullable=false)
      */
     private $sizeKey;
 
