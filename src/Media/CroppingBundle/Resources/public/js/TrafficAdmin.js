@@ -76,7 +76,7 @@ var CropMedia = {
             $(data.data.thumbs).each(function (i, v) {
                 var cropClass = '';
                 definedsizes += '<div data-key="' + v.sizeKey + '" data-id="' + v.id + '" data-name="' + v.name + '"  data-created="' + v.createdAt + '"  data-updated="' + v.updatedAt + '" class="thumbs cropped_sizes ' + cropClass + '">';
-                definedsizes += '<img src="/' + v.path + '" /><span>' + v.name + '<br>' + v.sizeKey + '<br>Media cropped for ' + v.meta + '</span>';
+                definedsizes += '<img src="' + v.path + '" /><span>' + v.name + '<br>' + v.sizeKey + '<br>Media cropped for ' + v.meta + '</span>';
                 definedsizes += '</div>';
             });
         } else {

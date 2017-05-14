@@ -7,6 +7,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 use Media\CroppingBundle\Entity\MediaCropping;
+use Imagine\Image\Point;
+use Imagine\Image\Box;
 
 class CropController extends Controller {
 
@@ -24,11 +26,14 @@ class CropController extends Controller {
 		$mediaThumbs     = $mediaThumbsRepo->findby( array( 'media' => $media ) );
 		$thumbs          = array();
 		if ( ! empty( $mediaThumbs ) ) {
+            $filesystem = $this->get('sonata.media.provider.image')->getFileSystem();
+
+
 			foreach ( $mediaThumbs as $key => $val ) {
 				$thumbs[] = array(
 					'id'         => $val->getId(),
 					'name'       => $val->getName(),
-					'path'       => $val->getPath(),
+					'path'       => $filesystem->getAdapter()->getUrl($val->getPath()),
 					'meta'       => $val->getMeta(),
 					'entityType' => $val->getEntityType(),
 					'entity'     => $val->getEntity(),
@@ -95,7 +100,8 @@ class CropController extends Controller {
 		return new JsonResponse( $response );
 	}
 
-	public function cropMedia( $request, $media ) {
+	public function cropMedia(Request $request, $media ) {
+
 		$config      = $this->container->getParameter( 'media_cropping' );
 		$requestData = $request->attributes->all();
 		$data        = $request->query->all();
@@ -109,32 +115,62 @@ class CropController extends Controller {
 			return array( 'success' => false, 'message' => 'Invalid Size/Dimensions', 'data' => '', 'key' => '' );
 		}
 		$crop_size = $config['sizes'][ $key ];
-		$targ_w    = $crop_size['width'];
-		$targ_h    = $crop_size['height'];
-		//$targ_w = $targ_h = 150;
-		$jpeg_quality = $crop_size['quality'];
 		$src          = $this->container->get( 'sonata.media.twig.extension' )->path( $media, 'reference' );
 		$srcArray     = array_filter( explode( '/', $src ) );
 		array_pop( $srcArray );
+
+        $parsed_url = parse_url($src);
+		$srcArray  = array_filter( explode( '/', $parsed_url['path'] ) );
+
+		array_pop( $srcArray );
+		array_shift( $srcArray );
+
 		$mediaPath       = join( '/', $srcArray );
-		$img_r           = imagecreatefromjpeg( $_SERVER['DOCUMENT_ROOT'] . $src );
-		$dst_r           = ImageCreateTrueColor( $targ_w, $targ_h );
-		$crop_media_name = uniqid() . $key . '-' . $targ_w . 'x' . $targ_h;
-		imagecopyresampled( $dst_r, $img_r, 0, 0, $x, $y, $targ_w, $targ_h, $w, $h );
-		header( 'Content-type: image/jpeg' );
-		imagejpeg( $dst_r, $mediaPath . '/' . $crop_media_name . '.jpeg', $jpeg_quality );
-		imagedestroy( $dst_r );
+		$crop_media_name = $key . '_crop_' . $media->getId() . '_' . $crop_size['width'] . 'x' . $crop_size['height'];
+        $image_service = $this->get('sonata.media.adapter.image.default');
+        $image = $image_service->load(file_get_contents($src));
+
+        $dest = imagecreatetruecolor($crop_size['width'], $crop_size['height']);
+        if (function_exists('imageantialias')) {
+            imageantialias($dest, true);
+        }
+
+        $transparent = imagecolorallocatealpha($dest, 255, 255, 255, 127);
+        imagefill($dest, 0, 0, $transparent);
+        imagecolortransparent($dest, $transparent);
+
+        imagecopyresampled($dest, $image->getGdResource(), 0, 0, round($x), round($y), $crop_size['width'], $crop_size['height'], round($w), round($h) );
+		imagejpeg( $dest, '/tmp/' . $crop_media_name . '.jpeg', 100 );
+		imagedestroy( $dest );
+
+        $new_crop = $this->get('sonata.media.provider.image')->getFileSystem()->get($mediaPath . '/' .$crop_media_name . '.jpeg', true);
+        $content = file_get_contents('/tmp/' . $crop_media_name . '.jpeg');
+        // @todo these settings need to come from the config. I dont understand why they are not alreayd set the service already
+        $new_crop->setContent($content, ['storage' => 'STANDARD', 'ACL' => 'public-read']);
+
 		$DM              = $this->getDoctrine()->getManager();
 		$mediaThumbsRepo = $DM->getRepository( 'Media\CroppingBundle\Entity\MediaCropping' );
 		$mediaThumb      = $mediaThumbsRepo->findOneBy( array(
-				'media'      => $media,
+            'media'      => $media,
 				'entity'     => $requestData['entity'],
 				'entityType' => $requestData['entityType'],
 				'sizeKey'    => $key,
 			)
 		);
 
-		if ( empty( $mediaThumb ) || $exist == 0 ) {
+		if ($mediaThumb instanceof MediaCropping) {
+            $message = 'Media Updated';
+			$MediaCropping = $mediaThumb;
+			$entity        = $DM->getRepository( $mediaThumb->getEntityType() )
+			                    ->find( $mediaThumb->getEntity() );
+			if ( ! empty( $entity ) ) {
+				$MediaCropping->setMeta( $entity->__toString() );
+			}
+			$MediaCropping->setUpdatedAt( new \DateTime( 'now' ) );
+			$MediaCropping->setPath( $mediaPath . '/' . $crop_media_name . '.jpeg' );
+			$MediaCropping->setName( $crop_media_name . '.jpeg' );
+		} else {
+            $message = 'Media Created';
 
 			$MediaCropping = new MediaCropping();
 			$MediaCropping->setUpdatedAt( new \DateTime( 'now' ) );
@@ -150,16 +186,6 @@ class CropController extends Controller {
 			if ( ! empty( $entity ) ) {
 				$MediaCropping->setMeta( $entity->__toString() );
 			}
-		} elseif ( $exist == 1 ) {
-			$MediaCropping = $mediaThumb;
-			$entity        = $DM->getRepository( $mediaThumb->getEntityType() )
-			                    ->find( $mediaThumb->getEntity() );
-			if ( ! empty( $entity ) ) {
-				$MediaCropping->setMeta( $entity->__toString() );
-			}
-			$MediaCropping->setUpdatedAt( new \DateTime( 'now' ) );
-			$MediaCropping->setPath( $mediaPath . '/' . $crop_media_name . '.jpeg' );
-			$MediaCropping->setName( $crop_media_name . '.jpeg' );
 		}
 
 		$validator = $this->get( 'validator' );
@@ -181,6 +207,6 @@ class CropController extends Controller {
 		$DM->persist( $MediaCropping );
 		$DM->flush();
 
-		return array( 'success' => true, 'message' => 'Media Created', 'data' => '', 'key' => '' );
+		return array( 'success' => true, 'message' => $message, 'data' => '', 'key' => '' );
 	}
 }
