@@ -25,9 +25,7 @@ Enable bundle in `AppKernel.php`
 	new FOS\JsRoutingBundle\FOSJsRoutingBundle(),
 	new Media\CroppingBundle\MediaCroppingBundle(),
 
-Override sonatas "standard_layout.html.twig" and add the following lines
-
-Somewhere between <head> and </head> place:
+Override sonatas "standard_layout.html.twig" and add the following lines somewhere between <head> and </head> place:
 
     {% javascripts
       '@MediaCroppingBundle/Resources/public/js/jquery-ui.js'
@@ -45,25 +43,6 @@ Somewhere between <head> and </head> place:
 
     <script src="{{ asset('bundles/fosjsrouting/js/router.js') }}"></script>
     <script src="{{ path('fos_js_routing_js', {"callback": "fos.Router.setData"}) }}"></script>
-
-
-At the end of the file before the </body> tag place the following:
-
-    <div class="crop_manager">
-     <div id="already_cropped_media" class="thumbs_container"></div>
-     <div id="crop_thumbs_container" class="thumbs_container"></div>
-     <hr/>
-     <div id="image_container" class="image_container">
-     <div></div>
-     <a class="btn btn-success" href="javascript:void(0);" id="crop_image">Crop</a>
-    </div>
-    <input type="hidden" id="x" name="x"/>
-    <input type="hidden" id="y" name="y"/>
-    <input type="hidden" id="w" name="w"/>
-    <input type="hidden" id="h" name="h"/>
-    <input type="hidden" id="key" name="key"/>
-    <input type="hidden" id="exist" name="exist" value="0"/>
-    </div>
 
 Usage
 

@@ -4,6 +4,8 @@ namespace Media\CroppingBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+
 use Media\CroppingBundle\Entity\MediaCropping;
 
 class CropController extends Controller {
@@ -62,7 +64,7 @@ class CropController extends Controller {
 		return $sizes;
 	}
 
-	public function saveAction( $id ) {
+	public function saveAction(Request $request, $id ) {
 
 		if ( empty( $id ) ) {
 			return new JsonResponse( array(
@@ -88,7 +90,6 @@ class CropController extends Controller {
 		if ( ! empty( $mediaThumbs ) ) {
 
 		}
-		$request  = $this->container->get( 'Request' );
 		$response = $this->cropMedia( $request, $media );
 
 		return new JsonResponse( $response );

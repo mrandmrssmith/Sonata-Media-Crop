@@ -195,8 +195,9 @@ $(document).ready(function () {
     if ($('.sonata-crop-media').length > 0) {
         CropMedia.IniCropMedia();
         var $crop_manager, HTML;
-        $crop_manager = $('.crop_manager');
-        HTML = '<div id="already_cropped_media" class="thumbs_container"></div>\
+        $crop_manager = $('body');
+        HTML = '<div class="crop_manager">\
+            <div id="already_cropped_media" class="thumbs_container"></div>\
             <div id="crop_thumbs_container" class="thumbs_container"></div>\
             <hr/>\
             <div id="image_container" class="image_container">\
@@ -208,9 +209,9 @@ $(document).ready(function () {
             <input type="hidden" id="w" name="w"/>\
             <input type="hidden" id="h" name="h"/>\
             <input type="hidden" id="key" name="key"/>\
-            <input type="hidden" id="exist" name="exist" value="0"/>';
+            <input type="hidden" id="exist" name="exist" value="0"/></div>';
 
-        $crop_manager.html(HTML);
+        $crop_manager.append(HTML);
 
     }
 
