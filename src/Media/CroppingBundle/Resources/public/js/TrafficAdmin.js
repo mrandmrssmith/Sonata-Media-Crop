@@ -43,7 +43,7 @@ var CropMedia = {
         var definedsizes = '<h2>Available Sizes</h2>';
         if ($(data.data.sizes).length > 0) {
             $(data.data.sizes).each(function (i, v) {
-                definedsizes += '<div data-key="' + v.key + '" data-width="' + v.width + '" data-height="' + v.height + '" class="thumbs crop_sizes"><img src="' + data.data.small + '" /><span>' + v.key + '<br>Dimensions:' + v.width + ' x ' + v.height + '</span></div>';
+                definedsizes += '<div data-key="' + v.key + '" data-width="' + v.width + '" data-height="' + v.height + '" class="thumbs crop_sizes"><span>' + v.key + '<br>Dimensions:' + v.width + ' x ' + v.height + '</span></div>';
             });
         }
         $('#crop_thumbs_container').html(definedsizes);

@@ -6,6 +6,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
+use Application\Sonata\MediaBundle\Entity\Media; 
+
 use Media\CroppingBundle\Entity\MediaCropping;
 use Imagine\Image\Point;
 use Imagine\Image\Box;
@@ -46,27 +48,28 @@ class CropController extends Controller {
 		$response['id']        = $media->getId();
 		$response['title']     = $media->getName();
 		$provider              = $this->container->get( $media->getProviderName() );
-		$response['small']     = $provider->generatePublicUrl( $media, $media->getContext() . '_small' );
-		$response['big']       = $provider->generatePublicUrl( $media, $media->getContext() . '_big' );
 		$response['reference'] = $provider->generatePublicUrl( $media, 'reference' );
 		$response['root_path'] = $this->container->get( 'sonata.media.twig.extension' )->path( $media, 'reference' );
 		$response['config']    = $this->container->getParameter( 'media_cropping' );
-		$response['sizes']     = $this->getCropSizes();
+		$response['sizes']     = $this->getCropSizes($media);
 		$response['thumbs']    = $thumbs;
 
 		return new JsonResponse( array( 'success' => true, 'message' => 'Media found', 'data' => $response ) );
 	}
 
-	public function getCropSizes() {
+	public function getCropSizes(Media $media) {
 		$config = $this->container->getParameter( 'media_cropping' );
-		$sizes  = array();
+		$crops  = [];
 		if ( ! empty( $config['sizes'] ) ) {
-			foreach ( $config['sizes'] as $key => $val ) {
-				$sizes[] = array( 'key' => $key, 'width' => $val['width'], 'height' => $val['height'] );
-			}
+			foreach ( $config['sizes'] as $context => $sizes ) {
+                if($context === $media->getContext()){
+                    foreach ( $sizes as $key => $val ) {
+                        $crops[] = array( 'key' => $key, 'width' => $val['width'], 'height' => $val['height'] );
+                    }
+                }
+            }
 		}
-
-		return $sizes;
+		return $crops;
 	}
 
 	public function saveAction(Request $request, $id ) {
@@ -102,7 +105,6 @@ class CropController extends Controller {
 
 	public function cropMedia(Request $request, $media ) {
 
-		$config      = $this->container->getParameter( 'media_cropping' );
 		$requestData = $request->attributes->all();
 		$data        = $request->query->all();
 		$key         = $data['key'];
@@ -111,10 +113,18 @@ class CropController extends Controller {
 		$y           = $data['y'];
 		$w           = $data['w'];
 		$h           = (int) $data['h'];
-		if ( ! isset( $config['sizes'][ $key ] ) || empty( $config['sizes'][ $key ] ) ) {
+        
+        $crop_size = null;
+        foreach($this->getCropSizes($media) as $size){
+            if($size['key'] === $key){
+                $crop_size = $size;
+            }
+        }
+
+		if ( !is_array($crop_size)) {
 			return array( 'success' => false, 'message' => 'Invalid Size/Dimensions', 'data' => '', 'key' => '' );
 		}
-		$crop_size = $config['sizes'][ $key ];
+
 		$src          = $this->container->get( 'sonata.media.twig.extension' )->path( $media, 'reference' );
 		$srcArray     = array_filter( explode( '/', $src ) );
 		array_pop( $srcArray );
