@@ -87,11 +87,6 @@ class MediaSubscriber implements EventSubscriber
                         ->getFileSystem()
                         ->get($newImagePath, true);
 
-                    $provider = $this->container
-                        ->get($entity->getProviderName());
-
-                    $url = $provider->generatePublicUrl($entity, 'reference');
-
                     /** @var UploadedFile $uploadedFile */
                     $uploadedFile = $entity->getBinaryContent();
 
