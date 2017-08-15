@@ -2,3 +2,9 @@ services:
     traffic.parameters.configuration:
         class: Media\CroppingBundle\Configuration\Configuration
         arguments: [ '@service_container']
+
+    media.cropping_bundle.entity.media.subscriber:
+        class: Media\CroppingBundle\EventListener\MediaSubscriber
+        arguments: ['@service_container', '@doctrine.orm.entity_manager', '%media_cropping%']
+        tags:
+            - { name: doctrine.event_subscriber, connection: default }

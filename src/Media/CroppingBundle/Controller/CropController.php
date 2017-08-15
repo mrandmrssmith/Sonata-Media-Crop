@@ -2,6 +2,7 @@
 
 namespace Media\CroppingBundle\Controller;
 
+use Media\CroppingBundle\EventListener\MediaSubscriber;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -59,17 +60,8 @@ class CropController extends Controller {
 
 	public function getCropSizes(Media $media) {
 		$config = $this->container->getParameter( 'media_cropping' );
-		$crops  = [];
-		if ( ! empty( $config['sizes'] ) ) {
-			foreach ( $config['sizes'] as $context => $sizes ) {
-                if($context === $media->getContext()){
-                    foreach ( $sizes as $key => $val ) {
-                        $crops[] = array( 'key' => $key, 'width' => $val['width'], 'height' => $val['height'] );
-                    }
-                }
-            }
-		}
-		return $crops;
+
+		return MediaSubscriber::getCropSizes($media, $config);
 	}
 
 	public function saveAction(Request $request, $id ) {
