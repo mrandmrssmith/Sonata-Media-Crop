@@ -4,6 +4,7 @@ namespace Media\CroppingBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
 /**
  * MediaCropping
  * @UniqueEntity(
@@ -12,7 +13,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  *     message="Already croppped media exists for this size and linked entity"
  * )
  * @ORM\Table(name="media_cropping", uniqueConstraints={@ORM\UniqueConstraint(name="unique_pair", columns={"media_id", "entity_type", "entity", "size_key"})}, indexes={@ORM\Index(name="media_fk", columns={"media_id"})})
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="Media\CroppingBundle\Repository\MediaCroppingRepository")
  */
 class MediaCropping
 {
