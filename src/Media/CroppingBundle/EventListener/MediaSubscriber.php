@@ -66,8 +66,6 @@ class MediaSubscriber implements EventSubscriber
                 ]);
 
                 if (empty($existingCrops)) {
-                    // Start Mamma Mia!
-
                     $src = $this->container
                         ->get('sonata.media.twig.extension')
                         ->path($entity, 'reference');
@@ -87,14 +85,9 @@ class MediaSubscriber implements EventSubscriber
                         ->getFileSystem()
                         ->get($newImagePath, true);
 
-                    /** @var UploadedFile $uploadedFile */
-                    $uploadedFile = $entity->getBinaryContent();
-
-                    $content = file_get_contents($uploadedFile->getPathname());
+                    $content = file_get_contents($src);
 
                     $new_crop->setContent($content, ['storage' => 'STANDARD', 'ACL' => 'public-read']);
-
-                    // End Mammma Mia!
 
                     $mediaCropping = new MediaCropping();
                     $mediaCropping->setUpdatedAt(new DateTime('now'))
