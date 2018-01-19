@@ -90,8 +90,9 @@ class MediaSubscriber implements EventSubscriber
                     $new_crop->setContent($content, ['storage' => 'STANDARD', 'ACL' => 'public-read']);
 
                     $mediaCropping = new MediaCropping();
-                    $mediaCropping->setUpdatedAt(new DateTime('now'))
+                    $mediaCropping
                         ->setCreatedAt(new DateTime('now'))
+                        ->setUpdatedAt($mediaCropping->getCreatedAt())
                         ->setName($entity->getName())
                         ->setPath($newImagePath)
                         ->setEntity($entity->getId())
