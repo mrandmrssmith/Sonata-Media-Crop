@@ -1,4 +1,5 @@
 <?php
+
 namespace Media\CroppingBundle\EventListener;
 
 use Application\Sonata\MediaBundle\Entity\Media;
@@ -8,8 +9,9 @@ use Doctrine\ORM\EntityManager;
 use Media\CroppingBundle\Entity\MediaCropping;
 use Media\CroppingBundle\Repository\MediaCroppingRepository;
 use Symfony\Component\DependencyInjection\Container;
-use \DateTime;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use DateTime;
+use Exception;
 
 /**
  * Class MediaSubscriber.
@@ -18,15 +20,22 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  */
 class MediaSubscriber implements EventSubscriber
 {
-    /** @var Container $em */
-    private $container;
+    /** @var Container $container */
+    protected $container;
 
     /** @var EntityManager $em */
-    private $em;
+    protected $em;
 
     /** @var array $mediaCroppingConfig */
-    private $mediaCroppingConfig;
+    protected $mediaCroppingConfig;
 
+    /**
+     * MediaSubscriber constructor.
+     *
+     * @param Container $container
+     * @param EntityManager $em
+     * @param array $mediaCroppingConfig
+     */
     public function __construct(Container $container, EntityManager $em, array $mediaCroppingConfig)
     {
         $this->container = $container;
@@ -34,26 +43,31 @@ class MediaSubscriber implements EventSubscriber
         $this->mediaCroppingConfig = $mediaCroppingConfig;
     }
 
-    public function getSubscribedEvents()
+    /**
+     * @return array
+     */
+    public function getSubscribedEvents(): array
     {
         return [
             'postPersist'
         ];
     }
 
-    public function postPersist(LifecycleEventArgs $args)
-    {
-        $this->index($args);
-    }
-
-    protected function index(LifecycleEventArgs $args)
+    /**
+     * Create the cropping size if the uploaded image is a GIF
+     *
+     * @param LifecycleEventArgs $args
+     *
+     * @return void
+     *
+     * @throws Exception
+     */
+    public function postPersist(LifecycleEventArgs $args): void
     {
         /** @var Media $entity */
         $entity = $args->getObject();
 
-        if ($entity instanceof Media
-            && $entity->getContentType() === 'image/gif'
-        ) {
+        if ($entity instanceof Media && $entity->getContentType() === 'image/gif') {
             /** @var MediaCroppingRepository $mediaCroppingRepository */
             $mediaCroppingRepository = $this->em->getRepository(MediaCropping::class);
             $cropSizes = $this->getCropSizes($entity, $this->mediaCroppingConfig);
