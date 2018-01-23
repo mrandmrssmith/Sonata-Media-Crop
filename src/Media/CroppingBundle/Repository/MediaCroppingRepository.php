@@ -12,9 +12,9 @@ class MediaCroppingRepository extends EntityRepository
      *
      * @param MediaCropping $mediaCropping
      *
-     * @return array
+     * @return MediaCropping[]
      */
-    public function findByEntityAndSize(MediaCropping $mediaCropping)
+    public function findByEntityAndSize(MediaCropping $mediaCropping): array
     {
         return $this
             ->createQueryBuilder('mediaCropping')
