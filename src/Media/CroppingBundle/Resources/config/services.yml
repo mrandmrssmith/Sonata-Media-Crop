@@ -21,8 +21,7 @@ services:
     media.cropping_bundle.event_listener.media_cropping_subscriber:
         class: Media\CroppingBundle\EventListener\MediaCroppingSubscriber
         arguments:
-            - '@service_container'
-            - '@media.cropping_bundle.repository.media_cropping_repository'
+            - '@doctrine.orm.entity_manager'
         tags:
             - { name: doctrine.event_subscriber, connection: default }
 

@@ -6,8 +6,7 @@ use Doctrine\Common\EventSubscriber;
 use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\EntityManager;
 use Media\CroppingBundle\Entity\MediaCropping;
-use Media\CroppingBundle\Repository\MediaCroppingRepository;#
-use Symfony\Component\DependencyInjection\Container;
+use Media\CroppingBundle\Repository\MediaCroppingRepository;
 use DateTime;
 use Exception;
 
@@ -24,13 +23,10 @@ class MediaCroppingSubscriber implements EventSubscriber
 
     /**
      * @param EntityManager $em
-     * @param MediaCroppingRepository $mediaCroppingRepository
      */
-    public function __construct(Container $container, MediaCroppingRepository $mediaCroppingRepository)
+    public function __construct(EntityManager $em)
     {
-        // WFT?????????????? Why is not working
-        $this->em = $container->get('doctrine.orm.entity_manager');
-        $this->mediaCroppingRepository = $mediaCroppingRepository;
+        $this->em = $em;
     }
 
     /**
@@ -57,7 +53,8 @@ class MediaCroppingSubscriber implements EventSubscriber
 
         if ($entity instanceof Media) {
             $mediaCroppingResizes = $this
-                ->mediaCroppingRepository
+                ->em
+                ->getRepository(MediaCropping::class)
                 ->findByEntityAndSize($media);
 
             foreach ($mediaCroppingResizes as $mediaCroppingResize) {
