@@ -22,6 +22,8 @@ services:
         class: Media\CroppingBundle\EventListener\MediaCroppingSubscriber
         arguments:
             - '@doctrine.orm.entity_manager'
+            - '@sonata.media.filesystem.s3'
+            - '@sonata.media.provider.image'
         tags:
             - { name: doctrine.event_subscriber, connection: default }
 

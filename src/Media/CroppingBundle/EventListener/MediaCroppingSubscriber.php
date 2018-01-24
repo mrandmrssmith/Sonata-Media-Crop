@@ -7,6 +7,8 @@ use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\EntityManager;
 use Media\CroppingBundle\Entity\MediaCropping;
 use Media\CroppingBundle\Repository\MediaCroppingRepository;
+use Gaufrette\Filesystem;
+use Sonata\MediaBundle\Provider\ImageProvider;
 use DateTime;
 use Exception;
 
@@ -18,15 +20,21 @@ class MediaCroppingSubscriber implements EventSubscriber
     /** @var EntityManager $em */
     protected $em;
 
-    /** @var MediaCroppingRepository $mediaCroppingRepository */
-    protected $mediaCroppingRepository;
+    /** @var FileSystem $fileSystem */
+    protected $fileSystem;
+
+    /** @var ImageProvider $imageProvider */
+    protected $imageProvider;
 
     /**
      * @param EntityManager $em
+     * @param FileSystem $fileSystem
      */
-    public function __construct(EntityManager $em)
+    public function __construct(EntityManager $em, FileSystem $fileSystem, ImageProvider $imageProvider)
     {
         $this->em = $em;
+        $this->fileSystem = $fileSystem;
+        $this->imageProvider = $imageProvider;
     }
 
     /**
@@ -51,13 +59,17 @@ class MediaCroppingSubscriber implements EventSubscriber
         /** @var MediaCropping $entity */
         $entity = $args->getObject();
 
-        if ($entity instanceof Media) {
+        if ($entity instanceof MediaCropping) {
             $mediaCroppingResizes = $this
                 ->em
                 ->getRepository(MediaCropping::class)
-                ->findByEntityAndSize($media);
+                ->findByEntityAndSize($entity);
 
             foreach ($mediaCroppingResizes as $mediaCroppingResize) {
+                if ($this->fileSystem->has($mediaCroppingResize->getPath())) {
+                    $this->fileSystem->delete($mediaCroppingResize->getPath());
+                }
+
                 $this->em->remove($mediaCroppingResize);
             }
 

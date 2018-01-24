@@ -22,6 +22,8 @@ class MediaCroppingRepository extends EntityRepository
             ->setParameter('media', $mediaCropping->getMedia())
             ->andWhere('mediaCropping.sizeKey LIKE :sizeKey')
             ->setParameter('sizeKey', "%{$mediaCropping->getSizeKey()}%")
+            ->andWhere('mediaCropping.id <> :id')
+            ->setParameter('id', $mediaCropping->getId())
             ->getQuery()
             ->getResult();
     }
