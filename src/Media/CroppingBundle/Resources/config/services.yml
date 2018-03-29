@@ -3,8 +3,32 @@ services:
         class: Media\CroppingBundle\Configuration\Configuration
         arguments: [ '@service_container']
 
-    media.cropping_bundle.entity.media.subscriber:
+    media.cropping_bundle.repository.media_cropping_repository:
+        class: Doctrine\ORM\EntityRepository
+        factory: ['@doctrine.orm.entity_manager', getRepository]
+        arguments:
+            - Media\CroppingBundle\Entity\MediaCropping
+
+    media.cropping_bundle.event_listener.media_subscriber:
         class: Media\CroppingBundle\EventListener\MediaSubscriber
-        arguments: ['@service_container', '@doctrine.orm.entity_manager', '%media_cropping%']
+        arguments:
+            - '@service_container'
+            - '@doctrine.orm.entity_manager'
+            - '%media_cropping%'
         tags:
             - { name: doctrine.event_subscriber, connection: default }
+
+    media.cropping_bundle.event_listener.media_cropping_subscriber:
+        class: Media\CroppingBundle\EventListener\MediaCroppingSubscriber
+        arguments:
+            - '@doctrine.orm.entity_manager'
+            - '@sonata.media.filesystem.s3'
+            - '@sonata.media.provider.image'
+        tags:
+            - { name: doctrine.event_subscriber, connection: default }
+
+    media.cropping_bundle.services.media_resizing_helper:
+        class: Media\CroppingBundle\Services\MediaResizingHelper
+        arguments:
+            - '@doctrine.orm.entity_manager'
+            - '@sonata.media.provider.image'
