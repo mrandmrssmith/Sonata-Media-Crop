@@ -55,8 +55,6 @@ class MediaResizingHelper
 
         if ($imagick->getImageWidth() === $width) {
             return $mediaCropping;
-        } elseif ($imagick->getImageWidth() < $width) {
-            throw new Exception('Requested a resize wider than the main image');
         }
 
         $imagick->resizeImage(
