@@ -2,10 +2,12 @@
 
 namespace Media\CroppingBundle\EventListener;
 
+use Doctrine\ORM\{
+    EntityManager, Events
+};
 use Application\Sonata\MediaBundle\Entity\Media;
 use Doctrine\Common\EventSubscriber;
-use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Event\PostFlushEventArgs;
 use Media\CroppingBundle\Entity\MediaCropping;
 use Media\CroppingBundle\Repository\MediaCroppingRepository;
 use Symfony\Component\DependencyInjection\Container;
@@ -49,40 +51,56 @@ class MediaSubscriber implements EventSubscriber
     public function getSubscribedEvents(): array
     {
         return [
-            'postPersist'
+            Events::postFlush
         ];
     }
 
     /**
      * Create the cropping size if the uploaded image is a GIF
      *
-     * @param LifecycleEventArgs $args
+     * @param PostFlushEventArgs $args
      *
      * @return void
      *
      * @throws Exception
      */
-    public function postPersist(LifecycleEventArgs $args): void
+    public function postFlush(PostFlushEventArgs $args): void
     {
-        /** @var Media $entity */
-        $entity = $args->getObject();
+        /** @var Media[] $medias */
+        $medias = $this->em
+            ->createQueryBuilder()
+            ->select('m')
+            ->from(Media::class, 'm')
+            ->where('m.contentType LIKE :type')
+            ->setParameter('type', 'image/gif')
+            ->andWhere('m.updatedAt > :lastMins')
+            ->setParameter('lastMins', new DateTime('-2 minutes'))
+            ->getQuery()
+            ->getResult()
+        ;
 
-        if ($entity instanceof Media && $entity->getContentType() === 'image/gif') {
+        if (empty($medias)) {
+            return;
+        }
+
+        $this->disableEvent();
+
+        foreach ($medias as $media) {
             /** @var MediaCroppingRepository $mediaCroppingRepository */
             $mediaCroppingRepository = $this->em->getRepository(MediaCropping::class);
-            $cropSizes = $this->getCropSizes($entity, $this->mediaCroppingConfig);
+            $cropSizes = $this->getCropSizes($media, $this->mediaCroppingConfig);
 
             foreach ($cropSizes as $cropSize) {
                 /** @var MediaCropping[] $crops */
                 $existingCrops = $mediaCroppingRepository->findBy([
-                    'media' => $entity,
+                    'media' => $media,
                     'sizeKey' => $cropSize['key']
                 ]);
 
                 if (empty($existingCrops)) {
                     $src = $this->container
                         ->get('sonata.media.twig.extension')
-                        ->path($entity, 'reference');
+                        ->path($media, 'reference');
 
                     $srcArray = array_filter(explode('/', $src));
                     array_pop($srcArray);
@@ -92,7 +110,7 @@ class MediaSubscriber implements EventSubscriber
                     array_shift($srcArray);
                     $mediaPath = join('/', $srcArray);
 
-                    $newImagePath = "$mediaPath/{$entity->getName()}";
+                    $newImagePath = "$mediaPath/{$media->getName()}";
 
                     $new_crop = $this->container
                         ->get('sonata.media.provider.image')
@@ -107,20 +125,43 @@ class MediaSubscriber implements EventSubscriber
                     $mediaCropping
                         ->setCreatedAt(new DateTime('now'))
                         ->setUpdatedAt($mediaCropping->getCreatedAt())
-                        ->setName($entity->getName())
+                        ->setName($media->getName())
                         ->setPath($newImagePath)
-                        ->setEntity($entity->getId())
+                        ->setEntity($media->getId())
                         ->setEntityType('ApplicationSonataMediaBundle:Media')
-                        ->setMedia($entity)
+                        ->setMedia($media)
                         ->setSizeKey($cropSize['key'])
-                        ->setMeta($entity->getName())
+                        ->setMeta($media->getName())
                     ;
 
                     $this->em->persist($mediaCropping);
                 }
             }
+        }
 
-            $this->em->flush();
+        $this->em->flush();
+    }
+
+    /**
+     * @author Daniele Rostellato <daniele.rostellato@smithhotels.com>
+     *
+     * @return void
+     */
+    private function disableEvent(): void
+    {
+        foreach ($this->em->getEventManager()->getListeners() as $event => $listeners) {
+            foreach ($listeners as $key => $listener) {
+                if ($listener instanceof $this) {
+                    $this->em
+                        ->getEventManager()
+                        ->removeEventListener(
+                            [Events::postFlush],
+                            $listener
+                        );
+
+                    break;
+                }
+            }
         }
     }
 
