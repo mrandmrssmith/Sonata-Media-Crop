@@ -42,12 +42,13 @@ class MediaResizingHelper
      *
      * @param MediaCropping $mediaCropping
      * @param int $width
+     * @param int $position
      *
      * @return MediaCropping
      *
      * @throws Exception
      */
-    public function resizeCrop(MediaCropping $mediaCropping, int $width): MediaCropping
+    public function resizeCrop(MediaCropping $mediaCropping, int $width, int $position): MediaCropping
     {
         /** @var string $cropPath */
         $cropPath = $this->getImageProvider()->getCdnPath($mediaCropping->getPath(), false);
@@ -73,7 +74,7 @@ class MediaResizingHelper
         $mediaPath = join('/', $srcArray);
 
         $cropPathinfo = pathinfo($cropPath);
-        $newImageName = "{$cropPathinfo['filename']}-w$width.{$cropPathinfo['extension']}";
+        $newImageName = "{$cropPathinfo['filename']}-w$width-p$position.{$cropPathinfo['extension']}";
         $newImagePath = "$mediaPath/$newImageName";
 
         $newImage = $this->getImageProvider()->getFileSystem()->get($newImagePath, true);
@@ -89,7 +90,7 @@ class MediaResizingHelper
             ->setEntity($mediaCropping->getEntity())
             ->setEntityType('ApplicationSonataMediaBundle:Media')
             ->setMedia($mediaCropping->getMedia())
-            ->setSizeKey("{$mediaCropping->getSizeKey()}-w$width")
+            ->setSizeKey("{$mediaCropping->getSizeKey()}-w$width-p$position")
             ->setMeta($mediaCropping->getMeta())
         ;
 
