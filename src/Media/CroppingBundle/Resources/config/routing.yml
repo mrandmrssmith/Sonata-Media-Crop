@@ -1,7 +1,3 @@
-media_cropping_homepage:
-    path:     /hello/{name}
-    defaults: { _controller: MediaCroppingBundle:Default:index }
-
 media_cropping_image:
     path:      /media-cropping-image/{id}
     defaults:  { _controller: MediaCroppingBundle:Crop:index }
