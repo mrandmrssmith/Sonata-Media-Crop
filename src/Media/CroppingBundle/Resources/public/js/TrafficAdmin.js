@@ -166,18 +166,28 @@ var CropMedia = {
                         CropMedia.IniCropSizes(data);
                         CropMedia.IniCroppedMedia(data);
                         CropMedia.IniCropAction(CropMedia.media_id);
-                        $('.crop_manager').dialog({
+                        $('.crop_manager').dialog({  
                             autoOpen: true,
                             resizable: true,
-                            height: 500,
-                            width: 1200,
+                            height: 'auto',
+                            width: 'auto',
                             show: {
                                 effect: "fade",
-                                duration: 1000
+                                duration: 500
                             },
                             hide: {
                                 effect: "clip",
-                                duration: 1000
+                                duration: 500
+                            },
+                            position: {
+                                my: "left top",
+                                at: "left top",
+                                of: '.content-wrapper',
+                                collision: 'fit',
+                                within: '.content-wrapper',
+                                using: function(positionToSet, elementPositioning) {
+                                    $(this).css({left: positionToSet.left, top:$('.navbar').outerHeight()})
+                                }
                             }
                         });
                     }
