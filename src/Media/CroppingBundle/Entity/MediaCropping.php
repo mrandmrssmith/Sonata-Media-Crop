@@ -85,9 +85,9 @@ class MediaCropping
     /**
      * @var \Application\Sonata\MediaBundle\Entity\Media
      *
-     * @ORM\ManyToOne(targetEntity="Application\Sonata\MediaBundle\Entity\Media")
+     * @ORM\ManyToOne(targetEntity="Application\Sonata\MediaBundle\Entity\Media", inversedBy="crops")
      * @ORM\JoinColumns({
-     *   @ORM\JoinColumn(name="media_id", referencedColumnName="id")
+     *   @ORM\JoinColumn(name="media_id", referencedColumnName="id", onDelete="CASCADE")
      * })
      */
     private $media;
